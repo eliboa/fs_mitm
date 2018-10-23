@@ -36,6 +36,12 @@ void thermosphere_detect(void *section, size_t sec_size) {
     if (g_tms_ep < (uintptr_t)section || g_tms_ep >= (uintptr_t)section + sec_size) {
         panic_predefined(0xF);
     }
+    
+    /* Thermosphere present means we should deprivilege to EL2. */
+    {
+        uint64_t temp_reg;
+        SET_SYSREG(spsr_el3, 0b1111 << 6 | 0b1010);
+    }
 }
 
 bool thermosphere_is_present(void) {

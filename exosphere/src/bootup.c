@@ -44,6 +44,8 @@
 #include "memory_map.h"
 #include "synchronization.h"
 
+#include "thermosphere.h"
+
 static bool g_has_booted_up = false;
 
 
@@ -310,7 +312,13 @@ void setup_current_core_state(void) {
     uint64_t temp_reg;
 
     /* Setup system registers. */
-    SET_SYSREG(spsr_el3, 0b1111 << 6 | 0b0101); /* use EL2h+DAIF set initially, may be overwritten later. Not in official code */
+    if (thermosphere_is_present()) {
+        /* If thermosphere is present, use EL2h. */
+        SET_SYSREG(spsr_el3, 0b1111 << 6 | 0b1010);
+    } else {
+        /* Thermosphere not present -> use EL1h. */
+        SET_SYSREG(spsr_el3, 0b1111 << 6 | 0b0101); /* use EL2h+DAIF set initially, may be overwritten later. Not in official code */
+    }
 
     SET_SYSREG(actlr_el3, 0x73ull);
     SET_SYSREG(actlr_el2, 0x73ull);

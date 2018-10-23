@@ -72,7 +72,7 @@ void __attribute__((noreturn)) core_jump_to_lower_el(void) {
     uintptr_t ep;
     uint64_t arg0;
     uint64_t arg1;
-    uint32_t spsr = 0b1111 << 6;
+    uint32_t spsr = get_spsr();
     unsigned int core_id = get_core_id();
     critical_section_t *critsec = get_boot_critical_section();
 
@@ -83,22 +83,17 @@ void __attribute__((noreturn)) core_jump_to_lower_el(void) {
     __sev();
     
     if (thermosphere_is_present()) {
-        /* Return to EL2, EL2 stack. */
-        spsr |= 0b1010;
         /* Thermosphere arguments are EL1 ep + argument. */
         arg1 = arg0;
         arg0 = (uint64_t)ep;
         ep = thermosphere_get_entrypoint();
-    } else {
-        /* Return to EL1, EL1 stack. */
-        spsr |= 0b0101;
-        
+    } else {        
         /* Do not pass an additional argument. */
         arg1 = 0;
     }
 
     /* Nintendo hardcodes EL1, but we can boot fine using other EL1/EL2 modes as well */
-    __jump_to_lower_el(ep, arg0, arg1, spsr); /* only keep EL, SPSel, set DAIF */
+    __jump_to_lower_el(ep, arg0, arg1, (0b1111 << 6) | (spsr & 0b1111)); /* only keep EL, SPSel, set DAIF */
 }
 
 uint32_t cpu_on(uint32_t core, uintptr_t entrypoint_addr, uint64_t argument) {
