@@ -33,6 +33,7 @@
 #include "sysctr0.h"
 #include "exocfg.h"
 #include "smc_api.h"
+#include "thermosphere.h"
 
 extern void *__start_cold_addr;
 extern size_t __bin_size;
@@ -403,6 +404,10 @@ static void load_package2_sections(package2_meta_t *metadata, uint32_t master_ke
         } else if (size != 0) {
             package2_crypt_ctr(master_key_rev, dst_start, size, src_start, size, metadata->section_ctrs[section], 0x10);
         }
+        
+        /* Try to detect thermosphere presence. */
+        thermosphere_detect(dst_start, metadata->section_sizes[section]);
+        
         cur_section_offset += size;
     }
 
