@@ -27,6 +27,7 @@
 #include "utils.h"
 #include "synchronization.h"
 #include "preprocessor.h"
+#include "thermosphere.h"
 
 #define SAVE_SYSREG64(reg) do { __asm__ __volatile__ ("mrs %0, " #reg : "=r"(temp_reg) :: "memory"); g_cpu_contexts[current_core].reg = temp_reg; } while(false)
 #define SAVE_SYSREG32(reg) do { __asm__ __volatile__ ("mrs %0, " #reg : "=r"(temp_reg) :: "memory"); g_cpu_contexts[current_core].reg = (uint32_t)temp_reg; } while(false)
@@ -39,7 +40,7 @@
 #define RESTORE_WP_REG(i, _) RESTORE_SYSREG64(DBGWVR##i##_EL1); RESTORE_SYSREG64(DBGWCR##i##_EL1);
 
 /* start.s */
-void __attribute__((noreturn)) __jump_to_lower_el(uint64_t arg, uintptr_t ep, uint32_t spsr);
+void __attribute__((noreturn)) __jump_to_lower_el(uintptr_t ep, uint64_t arg0, uint64_t arg1, uint32_t spsr);
 
 static saved_cpu_context_t g_cpu_contexts[NUM_CPU_CORES] = {0};
 
@@ -69,19 +70,35 @@ critical_section_t *get_boot_critical_section(void) {
 
 void __attribute__((noreturn)) core_jump_to_lower_el(void) {
     uintptr_t ep;
-    uint64_t arg;
+    uint64_t arg0;
+    uint64_t arg1;
+    uint32_t spsr = 0b1111 << 6;
     unsigned int core_id = get_core_id();
-    uint32_t spsr = get_spsr();
     critical_section_t *critsec = get_boot_critical_section();
 
-    use_core_entrypoint_and_argument(core_id, &ep, &arg);
+    use_core_entrypoint_and_argument(core_id, &ep, &arg0);
     critical_section_leave(critsec);
     flush_dcache_range(critsec, (uint8_t *)critsec + sizeof(critical_section_t));
     /* already does a dsb sy */
     __sev();
+    
+    if (thermosphere_is_present()) {
+        /* Return to EL2, EL2 stack. */
+        spsr |= 0b1010;
+        /* Thermosphere arguments are EL1 ep + argument. */
+        arg1 = arg0;
+        arg0 = (uint64_t)ep;
+        ep = thermosphere_get_entrypoint();
+    } else {
+        /* Return to EL1, EL1 stack. */
+        spsr |= 0b0101;
+        
+        /* Do not pass an additional argument. */
+        arg1 = 0;
+    }
 
     /* Nintendo hardcodes EL1, but we can boot fine using other EL1/EL2 modes as well */
-    __jump_to_lower_el(arg, ep, 0b1111 << 6 | (spsr & 0b1101)); /* only keep EL, SPSel, set DAIF */
+    __jump_to_lower_el(ep, arg0, arg1, (spsr & 0b1101)); /* only keep EL, SPSel, set DAIF */
 }
 
 uint32_t cpu_on(uint32_t core, uintptr_t entrypoint_addr, uint64_t argument) {

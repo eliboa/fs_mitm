@@ -263,15 +263,17 @@ __set_exception_entry_stack_pointer:
 .global     __jump_to_lower_el
 .type       __jump_to_lower_el, %function
 __jump_to_lower_el:
-    /* x0: arg (context ID), x1: entrypoint, w2: spsr */
-    mov x19, x0
-    mov  w2, w2
+    /* x0: entrypoint, x1: arg0, x2: arg1, w3: spsr */
+    mov x19, x1
+    mov x20, x2
+    mov  w3, w3
 
-    msr  elr_el3, x1
-    msr  spsr_el3, x2
+    msr  elr_el3, x0
+    msr  spsr_el3, x3
 
     bl __set_exception_entry_stack_pointer
     mov x0, x19
+    mov x1, x20
 
     isb
     eret
