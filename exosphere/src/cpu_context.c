@@ -98,7 +98,7 @@ void __attribute__((noreturn)) core_jump_to_lower_el(void) {
     }
 
     /* Nintendo hardcodes EL1, but we can boot fine using other EL1/EL2 modes as well */
-    __jump_to_lower_el(ep, arg0, arg1, (spsr & 0b1101)); /* only keep EL, SPSel, set DAIF */
+    __jump_to_lower_el(ep, arg0, arg1, spsr); /* only keep EL, SPSel, set DAIF */
 }
 
 uint32_t cpu_on(uint32_t core, uintptr_t entrypoint_addr, uint64_t argument) {
