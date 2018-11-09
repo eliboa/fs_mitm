@@ -6,7 +6,9 @@ I only made it because i wanted to be able to randomize musics (BFSTM files) pla
 ## How to use ?
 Copy/Replace ```fs_mitm.kip``` from this repo to your ```/atmoshpere``` folder.
 
-Create a folder inside ```/atmosphere/titles/<title ID>/``` that contains all the ```*.bfstm files``` you want to randomly play. For example : ```/atmosphere/titles/<title ID>/randomMusic```
+Create a folder inside ```/atmosphere/titles/<title ID>/``` that contains all the ```*.bfstm files``` you want to randomly play. For example : 
+
+```/atmosphere/titles/0100F8F0000A2000/randomMusic```
 
 Don't worry about filenames.  
 
