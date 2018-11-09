@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
- 
+
 #include <switch.h>
 #include <stratosphere.hpp>
 
@@ -54,7 +54,7 @@ Result LayeredRomFS::Read(void *buffer, size_t size, u64 offset)  {
     if (size == 0) {
         return 0;
     }
-    
+
     /* Validate size. */
     u64 virt_size = (*this->p_source_infos)[this->p_source_infos->size() - 1].virtual_offset + (*this->p_source_infos)[this->p_source_infos->size() - 1].size;
     if (offset >= virt_size) {
@@ -90,8 +90,8 @@ Result LayeredRomFS::Read(void *buffer, size_t size, u64 offset)  {
       snprintf(this->logbuff, sizeof(this->logbuff), "Read command for %s at offset %lu (size : %lu) \n", cur_source->loose_source_info.path, offset, size);
       Log(this->logbuff, strlen(this->logbuff));
 
-      snprintf(this->logbuff, sizeof(this->logbuff), "redir_target_path = %s \n", cur_source->loose_source_info.redir_target_path);
-      Log(this->logbuff, strlen(this->logbuff));
+      //snprintf(this->logbuff, sizeof(this->logbuff), "redir_target_path = %s \n", cur_source->loose_source_info.redir_target_path);
+      //Log(this->logbuff, strlen(this->logbuff));
 
 
       /* Set redir file path */
@@ -171,7 +171,7 @@ Result LayeredRomFS::Read(void *buffer, size_t size, u64 offset)  {
       snprintf(this->logbuff, sizeof(this->logbuff), "Redir target => ind = %d, path = %s, v_offset = %lu, read_offset = %lu \n", ind_arr[this->cur_random], redir_source->loose_source_info.path, redir_source->virtual_offset, offset);
       Log(this->logbuff, strlen(this->logbuff));
     }
-    
+
     Result rc;
     size_t read_so_far = 0;
     while (read_so_far < size) {
@@ -249,7 +249,7 @@ Result LayeredRomFS::Read(void *buffer, size_t size, u64 offset)  {
             offset = ((*this->p_source_infos)[cur_source_ind]).virtual_offset;
         }
     }
-    
+
     return 0;
 }
 Result LayeredRomFS::GetSize(u64 *out_size)  {

@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
- 
+
 #pragma once
 #include <switch.h>
 #include <map>
@@ -48,7 +48,6 @@ struct RomFSLooseSourceInfo {
     const char *path;
     //eliboa
     bool redir_file = false;
-    char *redir_target_path = {0};    
 };
 
 struct RomFSMemorySourceInfo {
@@ -70,7 +69,7 @@ struct RomFSSourceInfo {
         RomFSMemorySourceInfo metadata_source_info;
     };
     RomFSDataSource type;
-    
+
     RomFSSourceInfo(u64 v_o, u64 s, u64 offset, RomFSDataSource t) : virtual_offset(v_o), size(s), type(t) {
         switch (this->type) {
             case RomFSDataSource::BaseRomFS:
@@ -88,12 +87,11 @@ struct RomFSSourceInfo {
     }
     //eliboa
     //RomFSSourceInfo(u64 v_o, u64 s, const void *arg, RomFSDataSource t) : virtual_offset(v_o), size(s), type(t) {
-    RomFSSourceInfo(u64 v_o, u64 s, const void *arg, bool redir_file, char *redir_target_path, RomFSDataSource t) : virtual_offset(v_o), size(s), type(t) {
+    RomFSSourceInfo(u64 v_o, u64 s, const void *arg, bool redir_file, RomFSDataSource t) : virtual_offset(v_o), size(s), type(t) {
         switch (this->type) {
             case RomFSDataSource::LooseFile:
                 this->loose_source_info.path = (decltype(this->loose_source_info.path))arg;
                 this->loose_source_info.redir_file = redir_file;
-                this->loose_source_info.redir_target_path = redir_target_path;                
                 break;
             case RomFSDataSource::Memory:
                 this->memory_source_info.data = (decltype(this->memory_source_info.data))arg;
@@ -105,7 +103,7 @@ struct RomFSSourceInfo {
                 fatalSimple(0xF601);
         }
     }
-    
+
     RomFSSourceInfo(u64 v_o, u64 s, RomFSDataSource t) : virtual_offset(v_o), size(s), type(t) {
         switch (this->type) {
             case RomFSDataSource::MetaData:
@@ -118,7 +116,7 @@ struct RomFSSourceInfo {
                 fatalSimple(0xF601);
         }
     }
-    
+
     void Cleanup() {
         switch (this->type) {
             case RomFSDataSource::BaseRomFS:
@@ -135,7 +133,7 @@ struct RomFSSourceInfo {
                 fatalSimple(0xF601);
         }
     }
-    
+
     static bool Compare(RomFSSourceInfo *a, RomFSSourceInfo *b) {
         return (a->virtual_offset < b->virtual_offset);
     }
@@ -214,7 +212,6 @@ struct RomFSBuildFileContext {
     u64 orig_offset = 0;
     //eliboa
     bool redir_file = false;
-    char *redir_target_path = {0};    
 };
 
 class RomFSBuildContext {
@@ -230,13 +227,13 @@ class RomFSBuildContext {
         u64 dir_hash_table_size = 0;
         u64 file_hash_table_size = 0;
         u64 file_partition_size = 0;
-        
+
         FsDirectoryEntry dir_entry;
         RomFSDataSource cur_source_type;
-        
+
         void VisitDirectory(FsFileSystem *filesys, RomFSBuildDirectoryContext *parent);
         void VisitDirectory(RomFSBuildDirectoryContext *parent, u32 parent_offset, void *dir_table, size_t dir_table_size, void *file_table, size_t file_table_size);
-    
+
         bool AddDirectory(RomFSBuildDirectoryContext *parent_dir_ctx, RomFSBuildDirectoryContext *dir_ctx, RomFSBuildDirectoryContext **out_dir_ctx);
         bool AddFile(RomFSBuildDirectoryContext *parent_dir_ctx, RomFSBuildFileContext *file_ctx);
     public:
@@ -248,12 +245,12 @@ class RomFSBuildContext {
             this->num_dirs = 1;
             this->dir_table_size = 0x18;
         }
-        
+
         void MergeSdFiles();
         //eliboa
-        void HandleRedirFiles();        
+        void HandleRedirFiles();
         void MergeRomStorage(IROStorage *storage, RomFSDataSource source);
-        
+
         /* This finalizes the context. */
         void Build(std::vector<RomFSSourceInfo> *out_infos);
 };
@@ -273,7 +270,7 @@ static inline uint32_t romfs_calc_path_hash(uint32_t parent, const unsigned char
         hash = (hash >> 5) | (hash << 27);
         hash ^= path[start + i];
     }
-        
+
     return hash;
 }
 
