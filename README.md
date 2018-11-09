@@ -10,7 +10,7 @@ Create a folder inside ```/atmosphere/titles/<title ID>/``` that contains all th
 
 ```/atmosphere/titles/0100F8F0000A2000/randomMusic```
 
-Don't worry about filenames.  
+Don't worry about file names inside this folder
 
 Instead of a ```*.bfstm``` loose file you want to redirect, create a ```*.bfstm.redir``` file. For example :
 
