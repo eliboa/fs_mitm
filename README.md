@@ -16,7 +16,7 @@ Instead of a ```*.bfstm``` loose file you want to redirect, create a ```*.bfstm.
 
 ```/atmosphere/titles/0100F8F0000A2000/Sound/Resource/Stream/STRM_Matching_Versus.bfstm.redir```
 
-The ```*.redir``` file must contain the path to the folder to redirect to. For example :
+The ```*.redir``` file must contain the path to the folder to redirect to, in plain text. For example :
 
 ```/randomMusic```
 
