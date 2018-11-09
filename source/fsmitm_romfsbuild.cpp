@@ -57,8 +57,8 @@ void RomFSBuildContext::VisitDirectory(FsFileSystem *filesys, RomFSBuildDirector
         } else if (this->dir_entry.type == ENTRYTYPE_FILE) {
             RomFSBuildFileContext *child = new RomFSBuildFileContext({0});
 
-            /*eliboa
-              intercept *.redir files */
+            /* eliboa redir mod
+               intercept *.redir files */
             std::string cur_name(this->dir_entry.name);
             const std::string ext(".redir");
             if(cur_name != ext && cur_name.size() > ext.size() && cur_name.substr(cur_name.size() - ext.size()) == ext)
@@ -429,6 +429,8 @@ void RomFSBuildContext::Build(std::vector<RomFSSourceInfo> *out_infos) {
     }
 
 }
+
+/* eliboa redir mod */
 void RomFSBuildContext::HandleRedirFiles() {
 
     RomFSBuildFileContext *cur_file;
@@ -470,26 +472,19 @@ void RomFSBuildContext::HandleRedirFiles() {
             fsFileRead(&file, 0, redir_target_path, rsize, &r_s);
             fsFileClose(&file);
 
-            // Set target location
-            //cur_file->redir_target_path = redir_target_path;
-
             /* Find biggest file */
             u64 max_size = cur_file->size;
             for (const auto &it : this->files) {
                 cur_file2 = it.second;
                 if(cur_file2->source == RomFSDataSource::LooseFile && NULL != strstr(cur_file2->path, redir_target_path)) {
-                // A tester :
-                //if(cur_file->source == RomFSDataSource::LooseFile && cur_file->parent->path == redir_target_path ) {
                     if(cur_file2->size > max_size) max_size = cur_file2->size;
                 }
             }
 
             /* A TESTER => devrait fonctionner si this-files est bien trié
-            //auto existing = this->files.lower_bound(redir_target_path);
             for(const auto &it = this->files.lower_bound(redir_target_path); this->files.upper_bound(redir_target_path) -1; ++it;) {
 
-            }
-            */
+            } */
 
             if(cur_file->size == max_size) {
                 continue;
@@ -501,28 +496,10 @@ void RomFSBuildContext::HandleRedirFiles() {
             // Resize file
             cur_file->size = max_size;
 
-
-            // Remove redir extension from current filename
-            //cur_name = cur_name.substr(0, cur_name.size() - ext.size());
-            //strcpy (cur_file->path, cur_name.c_str());
-            //cur_file->path_len = strlen(cur_file->path);
-
-            /*
-            FsFileSystem sd_fs;
-            char logbuff[256];
-            snprintf(logbuff, sizeof(logbuff), "Found_target = %s, size = %lu \n", redir_target_path, max_size);
-            if (R_SUCCEEDED(fsMountSdcard(&sd_fs))) {
-                FsFile f;
-                fsFsCreateFile(&sd_fs, "/Found_target_OK.txt", strlen(logbuff), 0);
-                if (R_SUCCEEDED(fsFsOpenFile(&sd_fs, "/Found_target_OK.txt", FS_OPEN_READ | FS_OPEN_WRITE, &f))) {
-                    fsFileSetSize(&f, strlen(logbuff));
-                    fsFileWrite(&f, 0, logbuff, strlen(logbuff));
-                    fsFileClose(&f);
-                }
-                fsFsClose(&sd_fs);
-            }
-            */
-
+            /* Remove redir extension from current filename
+            cur_name = cur_name.substr(0, cur_name.size() - ext.size());
+            strcpy (cur_file->path, cur_name.c_str());
+            cur_file->path_len = strlen(cur_file->path); */
         }
     }
 }
