@@ -23,6 +23,31 @@ void Reboot() {
     /* ... */
 }
 
-void Log(const void *data, int size) {
-    /* ... */
+void Log(char * data, u64 size) {
+  //
+  //return
+  FsFileSystem g_sd_filesystem;
+  FsFile f;
+  if(R_SUCCEEDED(fsMountSdcard(&g_sd_filesystem))) {
+    u64 lsize;
+    u64 offset;
+    //void * ldata;
+    if(R_FAILED(fsFsOpenFile(&g_sd_filesystem, "/debug_layeredfs.txt", FS_OPEN_READ | FS_OPEN_WRITE, &f))) {
+      lsize = size;
+      offset = 0;
+      fsFsCreateFile(&g_sd_filesystem, "/debug_layeredfs.txt", size, 0);
+      fsFsOpenFile(&g_sd_filesystem, "/debug_layeredfs.txt", FS_OPEN_READ | FS_OPEN_WRITE, &f);
+    } else {
+      fsFileGetSize(&f, &lsize);
+      offset = lsize;
+      lsize += size;
+      //size_t r_s;
+      //fsFileRead(&f, 0, (void *) ldata, lsize, &r_s);
+    }
+    fsFileSetSize(&f, lsize);
+    fsFileWrite(&f, offset, data, size);
+    fsFileClose(&f);
+    //memset(data, 0, size);
+  }
+
 }

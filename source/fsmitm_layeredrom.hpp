@@ -32,6 +32,9 @@ class LayeredRomFS : public IROStorage {
         /* Information about the merged RomFS. */
         u64 title_id;
         std::shared_ptr<std::vector<RomFSSourceInfo>> p_source_infos;
+
+        /* eliboa */
+        int cur_random;
                 
     public:
         LayeredRomFS(std::shared_ptr<RomInterfaceStorage> s_r, std::shared_ptr<RomFileStorage> f_r, u64 tid);
@@ -40,4 +43,7 @@ class LayeredRomFS : public IROStorage {
         virtual Result Read(void *buffer, size_t size, u64 offset) override;
         virtual Result GetSize(u64 *out_size) override;
         virtual Result OperateRange(u32 operation_type, u64 offset, u64 size, FsRangeInfo *out_range_info) override;
+
+        /* eliboa */
+        char logbuff[FS_MAX_PATH];
 };

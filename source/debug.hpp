@@ -17,4 +17,4 @@
 #pragma once
 
 void Reboot();
-void Log(const void *data, int size);
+void Log(char * data, u64 size);

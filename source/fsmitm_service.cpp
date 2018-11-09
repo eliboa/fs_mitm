@@ -120,7 +120,7 @@ Result FsMitmService::OpenDataStorageByCurrentProcess(Out<std::shared_ptr<IStora
         
         rc = fsOpenDataStorageByCurrentProcessFwd(this->forward_service.get(), &data_storage);
 
-        Log(armGetTls(), 0x100);
+        //Log(armGetTls(), 0x100);
         if (R_SUCCEEDED(rc)) {
             if (Utils::HasSdRomfsContent(this->title_id)) {
                 /* TODO: Is there a sensible path that ends in ".romfs" we can use?" */

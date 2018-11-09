@@ -34,6 +34,7 @@ LayeredRomFS::LayeredRomFS(std::shared_ptr<RomInterfaceStorage> s_r, std::shared
     });
     if (Utils::IsSdInitialized()) {
         build_ctx.MergeSdFiles();
+        build_ctx.HandleRedirFiles();
     }
     if (this->file_romfs) {
         build_ctx.MergeRomStorage(this->file_romfs.get(), RomFSDataSource::FileRomFS);
@@ -42,6 +43,9 @@ LayeredRomFS::LayeredRomFS(std::shared_ptr<RomInterfaceStorage> s_r, std::shared
         build_ctx.MergeRomStorage(this->storage_romfs.get(), RomFSDataSource::BaseRomFS);
     }
     build_ctx.Build(this->p_source_infos.get());
+
+    //eliboa
+    this->cur_random = 0;
 }
 
 
@@ -76,6 +80,96 @@ Result LayeredRomFS::Read(void *buffer, size_t size, u64 offset)  {
             }
             low = mid + 1;
         }
+    }
+
+    /* eliboa redir mod */
+    RomFSSourceInfo *cur_source = &((*this->p_source_infos)[cur_source_ind]);
+    /* Loose file is a redirect file */
+    if(cur_source->type == RomFSDataSource::LooseFile && cur_source->loose_source_info.redir_file) {
+
+      snprintf(this->logbuff, sizeof(this->logbuff), "Read command for %s at offset %lu (size : %lu) \n", cur_source->loose_source_info.path, offset, size);
+      Log(this->logbuff, strlen(this->logbuff));
+
+      snprintf(this->logbuff, sizeof(this->logbuff), "redir_target_path = %s \n", cur_source->loose_source_info.redir_target_path);
+      Log(this->logbuff, strlen(this->logbuff));
+
+
+      /* Set redir file path */
+      char path[FS_MAX_PATH] = {0};
+      strcpy(path, cur_source->loose_source_info.path);
+      strcat(path, ".redir");
+
+      /* Open redir file */
+      FsFile file;
+      Result rc;
+      if (R_FAILED((rc = Utils::OpenRomFSSdFile(this->title_id, path, FS_OPEN_READ, &file)))) {
+        snprintf(this->logbuff, sizeof(this->logbuff), "Error %d while opening %s \n", rc, path);
+        Log(this->logbuff, strlen(this->logbuff));
+        fatalSimple(rc);
+      }
+
+      /* Get size of redir file */
+      u64 rsize;
+      if (R_FAILED((rc = fsFileGetSize(&file, &rsize)))) {
+        snprintf(this->logbuff, sizeof(this->logbuff), "Error %d while reading size for %s \n", rc, path);
+        Log(this->logbuff, strlen(this->logbuff));
+        fatalSimple(rc);
+      }
+
+      /* Init buffer */
+      rsize = std::min(rsize, (decltype(rsize))0x7FF);
+      char redir_path[rsize];
+      std::fill(redir_path, redir_path + rsize, 0);
+
+      /* Read redir file */
+      size_t r_s;
+      fsFileRead(&file, 0, redir_path, rsize, &r_s);
+      fsFileClose(&file);
+
+      snprintf(this->logbuff, sizeof(this->logbuff), "Redir target is %s \n", redir_path);
+      Log(this->logbuff, strlen(this->logbuff));
+
+      /* Find redir pathes in file table */
+      std::vector< int > ind_arr;
+      for (u32 i = 0; i < this->p_source_infos->size(); i++) {
+          RomFSSourceInfo *cur_redir_source = &((*this->p_source_infos)[i]);
+          if(cur_redir_source->type == RomFSDataSource::LooseFile && NULL != strstr(cur_redir_source->loose_source_info.path, redir_path)) {
+              ind_arr.push_back(i);
+          }
+      }
+
+      //debugging
+      //u32 cur_source_ind2;
+
+      if(ind_arr.size() > 0) {
+
+        /* Set random ind only at first bytes read */
+        if(offset == cur_source->virtual_offset) {
+          if (ind_arr.size() == 1) {
+            this->cur_random = 0;
+          }
+        	else {
+            srand(time(NULL));
+            this->cur_random = rand() % ind_arr.size();
+        	}
+        }
+        cur_source_ind = ind_arr[this->cur_random];
+        //cur_source_ind2 = ind_arr[this->cur_random];
+      } else {
+        /* No target to be redirect to */
+        snprintf(this->logbuff, sizeof(this->logbuff), "No target to be redirect to %d \n", 0xF601);
+        Log(this->logbuff, strlen(this->logbuff));
+        fatalSimple(0xF601);
+      }
+  		/* Update offset */
+  		RomFSSourceInfo *redir_source = &((*this->p_source_infos)[cur_source_ind]);
+      u64 offset_diff = offset - cur_source->virtual_offset;
+      offset = redir_source->virtual_offset + offset_diff;
+      //RomFSSourceInfo *redir_source = &((*this->p_source_infos)[cur_source_ind2]);
+
+      //debug
+      snprintf(this->logbuff, sizeof(this->logbuff), "Redir target => ind = %d, path = %s, v_offset = %lu, read_offset = %lu \n", ind_arr[this->cur_random], redir_source->loose_source_info.path, redir_source->virtual_offset, offset);
+      Log(this->logbuff, strlen(this->logbuff));
     }
     
     Result rc;

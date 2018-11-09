@@ -46,6 +46,9 @@ struct RomFSFileSourceInfo {
 
 struct RomFSLooseSourceInfo {
     const char *path;
+    //eliboa
+    bool redir_file = false;
+    char *redir_target_path = {0};    
 };
 
 struct RomFSMemorySourceInfo {
@@ -83,11 +86,14 @@ struct RomFSSourceInfo {
                 fatalSimple(0xF601);
         }
     }
-    
-    RomFSSourceInfo(u64 v_o, u64 s, const void *arg, RomFSDataSource t) : virtual_offset(v_o), size(s), type(t) {
+    //eliboa
+    //RomFSSourceInfo(u64 v_o, u64 s, const void *arg, RomFSDataSource t) : virtual_offset(v_o), size(s), type(t) {
+    RomFSSourceInfo(u64 v_o, u64 s, const void *arg, bool redir_file, char *redir_target_path, RomFSDataSource t) : virtual_offset(v_o), size(s), type(t) {
         switch (this->type) {
             case RomFSDataSource::LooseFile:
                 this->loose_source_info.path = (decltype(this->loose_source_info.path))arg;
+                this->loose_source_info.redir_file = redir_file;
+                this->loose_source_info.redir_target_path = redir_target_path;                
                 break;
             case RomFSDataSource::Memory:
                 this->memory_source_info.data = (decltype(this->memory_source_info.data))arg;
@@ -206,6 +212,9 @@ struct RomFSBuildFileContext {
     RomFSBuildFileContext *sibling = NULL;
     RomFSDataSource source{0};
     u64 orig_offset = 0;
+    //eliboa
+    bool redir_file = false;
+    char *redir_target_path = {0};    
 };
 
 class RomFSBuildContext {
@@ -241,6 +250,8 @@ class RomFSBuildContext {
         }
         
         void MergeSdFiles();
+        //eliboa
+        void HandleRedirFiles();        
         void MergeRomStorage(IROStorage *storage, RomFSDataSource source);
         
         /* This finalizes the context. */

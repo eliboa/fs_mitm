@@ -56,6 +56,19 @@ void RomFSBuildContext::VisitDirectory(FsFileSystem *filesys, RomFSBuildDirector
             }
         } else if (this->dir_entry.type == ENTRYTYPE_FILE) {
             RomFSBuildFileContext *child = new RomFSBuildFileContext({0});
+
+            /*eliboa
+              intercept *.redir files */
+            std::string cur_name(this->dir_entry.name);
+            const std::string ext(".redir");
+            if(cur_name != ext && cur_name.size() > ext.size() && cur_name.substr(cur_name.size() - ext.size()) == ext)
+            {
+                child->redir_file = true;
+                cur_name = cur_name.substr(0, cur_name.size() - ext.size());
+                strcpy (this->dir_entry.name, cur_name.c_str());
+
+            }
+
             /* Set child's path. */
             child->cur_path_ofs = parent->path_len + 1;
             child->path_len = child->cur_path_ofs + strlen(this->dir_entry.name);
@@ -262,7 +275,9 @@ void RomFSBuildContext::Build(std::vector<RomFSSourceInfo> *out_infos) {
     }
     
     out_infos->clear();
-    out_infos->emplace_back(0, sizeof(*header), header, RomFSDataSource::Memory);
+    //eliboa
+    //out_infos->emplace_back(0, sizeof(*header), header, RomFSDataSource::Memory);
+    out_infos->emplace_back(0, sizeof(*header), header, false, (char *) NULL, RomFSDataSource::Memory);
         
     /* Determine file offsets. */
     entry_offset = 0;
@@ -342,7 +357,9 @@ void RomFSBuildContext::Build(std::vector<RomFSSourceInfo> *out_infos) {
                 {
                     char *path = new char[cur_file->path_len + 1];
                     strcpy(path, cur_file->path);
-                    out_infos->emplace_back(cur_file->offset + ROMFS_FILEPARTITION_OFS, cur_file->size, path, cur_file->source);
+                    //eliboa
+                    //out_infos->emplace_back(cur_file->offset + ROMFS_FILEPARTITION_OFS, cur_file->size, path, cur_file->source);
+                    out_infos->emplace_back(cur_file->offset + ROMFS_FILEPARTITION_OFS, cur_file->size, path, cur_file->redir_file, cur_file->redir_target_path, cur_file->source);
                 }
                 break;
             default:
@@ -406,7 +423,109 @@ void RomFSBuildContext::Build(std::vector<RomFSSourceInfo> *out_infos) {
         out_infos->emplace_back(header->dir_hash_table_ofs, metadata_size, RomFSDataSource::MetaData);
         delete metadata;
     } else {
-        out_infos->emplace_back(header->dir_hash_table_ofs, metadata_size, metadata, RomFSDataSource::Memory);
+        //eliboa
+        //out_infos->emplace_back(header->dir_hash_table_ofs, metadata_size, metadata, RomFSDataSource::Memory);
+        out_infos->emplace_back(header->dir_hash_table_ofs, metadata_size, metadata, false, (char *) NULL, RomFSDataSource::Memory);
+
     }
     
+}
+void RomFSBuildContext::HandleRedirFiles() {
+
+    RomFSBuildFileContext *cur_file;
+    RomFSBuildFileContext *cur_file2;
+    for (const auto &it : this->files) {
+        cur_file = it.second;
+
+        // Check whether it's a *.redir file
+        /*
+        std::string cur_name(cur_file->path);
+        const std::string ext(".redir");
+        if(cur_name != ext && cur_name.size() > ext.size() && cur_name.substr(cur_name.size() - ext.size()) == ext)
+        */
+        if(cur_file->redir_file)
+        {
+            FsFile file;
+            Result rc;
+
+            if (!Utils::IsSdInitialized()) {
+                return;
+            }
+
+            /* Set redir file path */
+            char path[FS_MAX_PATH] = {0};
+            strcpy(path, cur_file->path);
+            strcat(path, ".redir");
+
+            if (R_FAILED((rc = Utils::OpenRomFSSdFile(this->title_id, path, FS_OPEN_READ, &file)))) {
+                continue;
+            }
+
+            u64 rsize;
+            if (R_FAILED((rc = fsFileGetSize(&file, &rsize)))) {
+                continue;
+            }
+            rsize = std::min(rsize, (decltype(rsize))0x7FF);
+            char redir_target_path[rsize];
+            //std::fill(redir_target_path, redir_target_path + rsize, 0);
+            size_t r_s;
+            fsFileRead(&file, 0, redir_target_path, rsize, &r_s);
+            fsFileClose(&file);
+
+
+            // Set target location
+            cur_file->redir_target_path = redir_target_path;
+
+            /* Find biggest file */
+            u64 max_size = cur_file->size;
+            for (const auto &it : this->files) {
+                cur_file2 = it.second;
+                if(cur_file2->source == RomFSDataSource::LooseFile && NULL != strstr(cur_file2->path, redir_target_path)) {
+                // A tester :
+                //if(cur_file->source == RomFSDataSource::LooseFile && cur_file->parent->path == redir_target_path ) {
+                    if(cur_file2->size > max_size) max_size = cur_file2->size;
+                }
+            }
+
+            /* A TESTER => devrait fonctionner si this-files est bien trié
+            //auto existing = this->files.lower_bound(redir_target_path);
+
+            for(const auto &it = this->files.lower_bound(redir_target_path); this->files.upper_bound(redir_target_path) -1; ++it;) {
+
+            }
+             */
+
+            if(cur_file->size == max_size) {
+                continue;
+            }
+
+            // It's a redir file
+            cur_file->redir_file = true;
+
+            // Resize file
+            cur_file->size = max_size;
+
+
+            // Remove redir extension from current filename
+            //cur_name = cur_name.substr(0, cur_name.size() - ext.size());
+            //strcpy (cur_file->path, cur_name.c_str());
+            //cur_file->path_len = strlen(cur_file->path);
+
+
+            FsFileSystem sd_fs;
+            char logbuff[256];
+            snprintf(logbuff, sizeof(logbuff), "Found_target = %s, size = %lu \n", redir_target_path, max_size);
+            if (R_SUCCEEDED(fsMountSdcard(&sd_fs))) {
+                FsFile f;
+                fsFsCreateFile(&sd_fs, "/Found_target_OK.txt", strlen(logbuff), 0);
+                if (R_SUCCEEDED(fsFsOpenFile(&sd_fs, "/Found_target_OK.txt", FS_OPEN_READ | FS_OPEN_WRITE, &f))) {
+                    fsFileSetSize(&f, strlen(logbuff));
+                    fsFileWrite(&f, 0, logbuff, strlen(logbuff));
+                    fsFileClose(&f);
+                }
+                fsFsClose(&sd_fs);
+            }
+
+        }
+    }
 }
