@@ -1,7 +1,7 @@
 # fs_mitm eliboa mod
 
 This modified version of fs.mitm let you randomize redirections to loose files in LayeredFS ([Atmosphere CFW](https://github.com/Atmosphere-NX/Atmosphere), Nintendo Switch).
-I only made it because i wanted to be able to randomize musics (BFSTM files) played in Splatoon 2. For example, in the lobby, the same music is played over and over...
+I only made it because i wanted to be able to randomize musics (BFSTM files) played in Splatoon 2. For example, in the lobby, the same music is played every time.
 
 ## How to use ?
 Copy/Replace ```fs_mitm.kip``` from this repo to your ```/atmoshpere``` folder.
