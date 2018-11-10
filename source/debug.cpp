@@ -25,7 +25,7 @@ void Reboot() {
 
 void Log(char * data, u64 size) {
   //
-  return
+  return;
   FsFileSystem g_sd_filesystem;
   FsFile f;
   if(R_SUCCEEDED(fsMountSdcard(&g_sd_filesystem))) {
