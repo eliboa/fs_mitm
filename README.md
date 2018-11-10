@@ -29,6 +29,6 @@ Launch Atmosphere & play.
 ## Disclaimer
 This is WIP. I only tested it with splatoon 2 (and atmosphere 0.7.4) but it should work with other Nintendo franchises (MK8, BOTW, Arms, etc).
 
-The module allocates enough size in LayeredFS to play the biggest files. It should work for other formats but i never tested it.
+The module allocates enough memory in LayeredFS to play the biggest files. It should work for other formats but i never tested it.
 
 **USE WITH CAUTION**
