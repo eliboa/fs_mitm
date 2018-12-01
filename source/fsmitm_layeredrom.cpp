@@ -34,7 +34,6 @@ LayeredRomFS::LayeredRomFS(std::shared_ptr<RomInterfaceStorage> s_r, std::shared
     });
     if (Utils::IsSdInitialized()) {
         build_ctx.MergeSdFiles();
-        build_ctx.HandleRedirFiles();
     }
     if (this->file_romfs) {
         build_ctx.MergeRomStorage(this->file_romfs.get(), RomFSDataSource::FileRomFS);

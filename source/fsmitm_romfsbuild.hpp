@@ -86,7 +86,6 @@ struct RomFSSourceInfo {
         }
     }
     //eliboa
-    //RomFSSourceInfo(u64 v_o, u64 s, const void *arg, RomFSDataSource t) : virtual_offset(v_o), size(s), type(t) {
     RomFSSourceInfo(u64 v_o, u64 s, const void *arg, bool redir_file, RomFSDataSource t) : virtual_offset(v_o), size(s), type(t) {
         switch (this->type) {
             case RomFSDataSource::LooseFile:
@@ -103,6 +102,23 @@ struct RomFSSourceInfo {
                 fatalSimple(0xF601);
         }
     }
+    /*
+    RomFSSourceInfo(u64 v_o, u64 s, const void *arg, RomFSDataSource t) : virtual_offset(v_o), size(s), type(t) {
+        switch (this->type) {
+            case RomFSDataSource::LooseFile:
+                this->loose_source_info.path = (decltype(this->loose_source_info.path))arg;
+                break;
+            case RomFSDataSource::Memory:
+                this->memory_source_info.data = (decltype(this->memory_source_info.data))arg;
+                break;
+            case RomFSDataSource::MetaData:
+            case RomFSDataSource::BaseRomFS:
+            case RomFSDataSource::FileRomFS:
+            default:
+                fatalSimple(0xF601);
+        }
+    }
+    */
 
     RomFSSourceInfo(u64 v_o, u64 s, RomFSDataSource t) : virtual_offset(v_o), size(s), type(t) {
         switch (this->type) {
@@ -211,7 +227,7 @@ struct RomFSBuildFileContext {
     RomFSDataSource source{0};
     u64 orig_offset = 0;
     //eliboa
-    bool redir_file = false;
+    bool redir_file = false;    
 };
 
 class RomFSBuildContext {

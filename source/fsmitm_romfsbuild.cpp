@@ -359,6 +359,7 @@ void RomFSBuildContext::Build(std::vector<RomFSSourceInfo> *out_infos) {
                     strcpy(path, cur_file->path);
                     //eliboa
                     out_infos->emplace_back(cur_file->offset + ROMFS_FILEPARTITION_OFS, cur_file->size, path, cur_file->redir_file, cur_file->source);
+                    //out_infos->emplace_back(cur_file->offset + ROMFS_FILEPARTITION_OFS, cur_file->size, path, cur_file->source);
                 }
                 break;
             default:
@@ -425,7 +426,6 @@ void RomFSBuildContext::Build(std::vector<RomFSSourceInfo> *out_infos) {
         //eliboa
         //out_infos->emplace_back(header->dir_hash_table_ofs, metadata_size, metadata, RomFSDataSource::Memory);
         out_infos->emplace_back(header->dir_hash_table_ofs, metadata_size, metadata, false, RomFSDataSource::Memory);
-
     }
 
 }
@@ -483,7 +483,6 @@ void RomFSBuildContext::HandleRedirFiles() {
 
             /* A TESTER => devrait fonctionner si this-files est bien trié
             for(const auto &it = this->files.lower_bound(redir_target_path); this->files.upper_bound(redir_target_path) -1; ++it;) {
-
             } */
 
             if(cur_file->size == max_size) {

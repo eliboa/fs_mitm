@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
- 
+
 #pragma once
 #include <switch.h>
 #include <stratosphere.hpp>
@@ -35,15 +35,15 @@ class LayeredRomFS : public IROStorage {
 
         /* eliboa */
         int cur_random;
-                
+
     public:
         LayeredRomFS(std::shared_ptr<RomInterfaceStorage> s_r, std::shared_ptr<RomFileStorage> f_r, u64 tid);
         virtual ~LayeredRomFS() = default;
-        
+
         virtual Result Read(void *buffer, size_t size, u64 offset) override;
         virtual Result GetSize(u64 *out_size) override;
         virtual Result OperateRange(u32 operation_type, u64 offset, u64 size, FsRangeInfo *out_range_info) override;
 
         /* eliboa */
-        char logbuff[FS_MAX_PATH];
+        char logbuff[FS_MAX_PATH];        
 };
